@@ -22,6 +22,7 @@ birds_status = 1
 #5 : the blues
 #6 : matilda
 
+l_white_dot=[]
 explosion_center = (0,0)
 explosion_timer =0
 dragging = False
@@ -31,6 +32,7 @@ friction_factor = 2/3
 l_rec = []
 #2/3; 7/12; 3/4; 1/2
 dt = 0
+frame_counter = 0
 bird_pos = pygame.Vector2(144, 547)
 origin_bird_pos = (144,547)
 white = (255, 255, 255)
@@ -43,6 +45,7 @@ egg = None
 capacity = False
 mouse_B4 = False
 weight = 10
+file_name = "map.txt"
 l_timer_destruction = []
 l_timer_death = []
 d_prop_info = {
@@ -91,10 +94,9 @@ pig = pygame.image.load('pig.png').convert_alpha()
 pig = pygame.transform.scale_by(pig, 0.04)
 
 hammer = pygame.image.load('hammer.png').convert_alpha()
-hammer = pygame.transform.scale_by(hammer, 0.04)
+hammer = pygame.transform.scale_by(hammer, 0.09)
 
 bird = red
-bird_original = bird
 
 w, h = bird.get_size() #We get height and width of the current bird (red)
 
@@ -146,46 +148,49 @@ def norm(vector):#Return the norm of a vector
 def draw(screen, space, draw_options, bird, bird_pos, w,h, ball, ball2 , ball3, font, score): #Draw everything for the game to render correctly
     """
     This function draw everything needed for the game
+    
     """
     screen.blit(background_image, (0, 0)) #Place the background image
     space.debug_draw(draw_options)        #Debug options to allow pymunk to show 
     screen.blit(cata, (150,550))          #Spawn the catapulte 
-    if ball:#If there is already a ball on screen (a rigid body so the bird azs been launched)
-            #We reotate the bird acording to the body rotation,       convert radian in degre \/
-        blitRotate(screen, bird, (bird_pos.x, bird_pos.y), (w/2, h/2), -1*ball.body.angle*180/math.pi)
-    else:
-        #Is there is no ball we show the bird without azny roation
-        blitRotate(screen, bird, (bird_pos.x, bird_pos.y), (w/2, h/2), 0)
-    if ball2 and ball3:
-        blitRotate(screen, bird, (ball2.body.position[0], ball2.body.position[1]), (w/2, h/2), -1*ball2.body.angle*180/math.pi)
-        blitRotate(screen, bird, (ball3.body.position[0], ball3.body.position[1]), (w/2, h/2), -1*ball3.body.angle*180/math.pi)
-    pygame.draw.line(screen, "black", (0,0), (50, 50), 4)#Draw a line 
-    pygame.draw.line(screen, "red", (50,0), (100, 50), 4)#Draw a line
-    #Command use: pygame.draw.line(screen, "color", (x1,y1), (x2, y2), size)
-    text = font.render("Score : "+str(score), True, (255,255,255))
+    if bird != None:
+        if ball:#If there is already a ball on screen (a rigid body so the bird azs been launched)
+                #We reotate the bird acording to the body rotation,       convert radian in degre \/
+            blitRotate(screen, bird, (bird_pos.x, bird_pos.y), (w/2, h/2), -1*ball.body.angle*180/math.pi)
+        else:
+            #Is there is no ball we show the bird without azny roation
+            blitRotate(screen, bird, (bird_pos.x, bird_pos.y), (w/2, h/2), 0)
+        if ball2 and ball3:
+            blitRotate(screen, bird, (ball2.body.position[0], ball2.body.position[1]), (w/2, h/2), -1*ball2.body.angle*180/math.pi)
+            blitRotate(screen, bird, (ball3.body.position[0], ball3.body.position[1]), (w/2, h/2), -1*ball3.body.angle*180/math.pi)
+        pygame.draw.line(screen, "black", (0,0), (50, 50), 4)#Draw a line 
+        pygame.draw.line(screen, "red", (50,0), (100, 50), 4)#Draw a line
+        #Command use: pygame.draw.line(screen, "color", (x1,y1), (x2, y2), size)
+        text = font.render("Score : "+str(score), True, (255,255,255))
 
-    # create a rectangular object for the
-    # text surface object
-    textRect = text.get_rect()# GET REKT
+        # create a rectangular object for the
+        # text surface object
+        textRect = text.get_rect()# GET REKT
 
-    # set the center of the rectangular object.
-    textRect.center = (1300, 20)
-    screen.blit(text, textRect)
-    for oink in d_pig["shape"]:
-        blitRotate(screen, pig, (oink.body.position[0], oink.body.position[1]), (pig.get_size()[0]/2, pig.get_size()[1]/2), -1*oink.body.angle*180/math.pi)
-    #Show the diffenrent bird on top for the user to choose from
-    screen.blit(red, (150,0))
-    screen.blit(chuck, (200,0))
-    screen.blit(bomb, (300,-10))
-    screen.blit(terence, (400,0))
-    screen.blit(blues, (500,0))
-    screen.blit(matilda, (600,0))
-    #Command use: screen.blit(image, (x,y)) the x and y of the image needs to be it's top left corner's coordinates
-    
-    #Draw lines to show the separation between the birds 
-    pygame.draw.line(screen, "black", (50,0), (50, 50), 4)
-    for i in range(1, 8):
-        pygame.draw.line(screen, "black", (100*i,0), (100*i, 50), 4)
+        # set the center of the rectangular object.
+        textRect.center = (1300, 20)
+        screen.blit(text, textRect)
+        for oink in d_pig["shape"]:
+            blitRotate(screen, pig, (oink.body.position[0], oink.body.position[1]), (pig.get_size()[0]/2, pig.get_size()[1]/2), -1*oink.body.angle*180/math.pi)
+        #Show the diffenrent bird on top for the user to choose from
+        screen.blit(red, (150,0))
+        screen.blit(chuck, (200,0))
+        screen.blit(bomb, (300,-10))
+        screen.blit(terence, (400,0))
+        screen.blit(blues, (500,0))
+        screen.blit(matilda, (600,0))
+        screen.blit(hammer, (725,0))
+        #Command use: screen.blit(image, (x,y)) the x and y of the image needs to be it's top left corner's coordinates
+        
+        #Draw lines to show the separation between the birds 
+        pygame.draw.line(screen, "black", (50,0), (50, 50), 4)
+        for i in range(1, 9):
+            pygame.draw.line(screen, "black", (100*i,0), (100*i, 50), 4)
     
 def create_structure(space, width, height):
     """
@@ -409,29 +414,16 @@ while running:
     #pygame.draw.rect(screen, "black", pygame.Rect(bird_pos.x, bird_pos.y, round((1-explosion_timer)*3200), round((1-explosion_timer)*3200)))
     l_to_remove = []
     for prop, last_vel in zip(d_prop_info["shape"], d_prop_info["last_vel"]):
-        #print(prop.body.velocity, end=" - ")
-        if abs(prop.body.kinetic_energy-last_vel) < 10*prop.body.mass:
-            pygame.draw.rect(screen, "black", pygame.Rect(prop.body.position[0], prop.body.position[1], 10, 10))
-        elif abs(prop.body.kinetic_energy-last_vel) < 1000*prop.body.mass:
-            pygame.draw.rect(screen, "yellow", pygame.Rect(prop.body.position[0], prop.body.position[1], 10, 10))
-        elif abs(prop.body.kinetic_energy-last_vel) < 10000*prop.body.mass:
-            pygame.draw.rect(screen, "orange", pygame.Rect(prop.body.position[0], prop.body.position[1], 10, 10))
-        elif abs(prop.body.kinetic_energy-last_vel) < 20000*prop.body.mass:
-            pygame.draw.rect(screen, "red", pygame.Rect(prop.body.position[0], prop.body.position[1], 10, 10))
-        else:
-            pygame.draw.rect(screen, "purple", pygame.Rect(prop.body.position[0], prop.body.position[1], 10, 10))
-            if (prop.body.kinetic_energy)> 50000*prop.body.mass:
-                pygame.draw.rect(screen, "white", pygame.Rect(prop.body.position[0], prop.body.position[1], 10, 10))
-            if abs(prop.body.kinetic_energy-last_vel) > 50000*prop.body.mass:
-                space.remove(prop, prop.body)
-                l_to_remove.append(prop)
-                l_timer_destruction.append([prop, 1])
-                score += 1000
-            l_prop_memo = d_prop_info["shape"]
-            d_prop_info["shape"] = []
-            for prop in l_prop_memo:
-                if prop not in l_to_remove:
-                    d_prop_info["shape"].append(prop)
+        if abs(prop.body.kinetic_energy-last_vel) > 50000*prop.body.mass:
+            space.remove(prop, prop.body)
+            l_to_remove.append(prop)
+            l_timer_destruction.append([prop, 1])
+            score += 1000
+        l_prop_memo = d_prop_info["shape"]
+        d_prop_info["shape"] = []
+        for prop in l_prop_memo:
+            if prop not in l_to_remove:
+                d_prop_info["shape"].append(prop)
     event = mouse_event(mouse_B4) #get mouse event (check if mouse just got pressed/unpressed)
 
     if event == 1: #If mouse just got pressed
@@ -442,14 +434,12 @@ while running:
             if pygame.mouse.get_pos()[0] < 50:
                 ball, bird_pos, launching, ball2, ball3, egg = remove_ball(space, ball, ball2, ball3, egg, origin_bird_pos, bird_pos, launching)
                 capacity = False
+                
             elif 50<pygame.mouse.get_pos()[0] and pygame.mouse.get_pos()[0] < 100:
                 for props in d_prop_info["shape"]:
                     space.remove(props, props.body)
                 d_prop_info["shape"] = create_structure(space, 1600, 720)
-            elif 50<pygame.mouse.get_pos()[0] and pygame.mouse.get_pos()[0] < 100:
-                for props in d_prop_info["shape"]:
-                    space.remove(props, props.body)
-                d_prop_info["shape"] = create_structure(space, 1600, 720)   
+
             elif 100<pygame.mouse.get_pos()[0] and pygame.mouse.get_pos()[0] < 200 and not launching:
                 bird = red
                 birds_status = 1
@@ -486,6 +476,10 @@ while running:
                 weight = 20
                 radius = 25
                 w, h = bird.get_size()
+            elif 700<pygame.mouse.get_pos()[0] and pygame.mouse.get_pos()[0] < 800 and not launching:
+                bird = hammer
+                birds_status = -1
+                bird = None
         elif launching and not capacity:
             if birds_status == 2:
                 capacity = True
@@ -511,13 +505,13 @@ while running:
                 velocity_egg = [velocity[0], velocity[1]]
                 egg = launch(velocity_egg, weight, radius)
                 egg.body.apply_impulse_at_local_point((velocity[0], 88000),(0,0))#Add an impulse relative 
-                ball.body.apply_impulse_at_local_point((velocity[0], -50000000),(0,0))
+                ball.body.apply_impulse_at_local_point((velocity[0], -50000),(0,0))
     elif event == -1: #If mouse just got unpressed
         if dragging: #If the user was dragging the bird from the cata
             #We launch it
             dragging = False
             launching = True
-            
+            l_white_dot = []
             #The velocity applied is the distance dragged from origin point were the mouse was clicked
             velocity = [(pygame.mouse.get_pos()[0]-origin_coo[0]), (pygame.mouse.get_pos()[1]-origin_coo[1])]
 
@@ -528,7 +522,7 @@ while running:
             ball = launch(velocity, weight, radius)
 
     if explosion_timer > 0:
-        d_prop_info = explode_prop(space, d_prop_info, explosion_center, explosion_timer, score)
+        d_prop_info, score = explode_prop(space, d_prop_info, explosion_center, explosion_timer, score)
         for i in range(350):            
             explo_co = [random.randint(-160, 160), random.randint(-160, 160)]
             k = 1/(math.sqrt(explo_co[0]**2+explo_co[1]**2)) if explo_co != [0, 0] else 1
@@ -566,9 +560,11 @@ while running:
         #We set it's position to be glued to the ball's position
         bird_pos.x = ball.body.position[0]
         bird_pos.y = ball.body.position[1]
-
+        if frame_counter%3==0:
+            l_white_dot.append((screen, "black", (bird_pos.x, bird_pos.y), 5))
     
-    
+    for dot in l_white_dot:
+        pygame.draw.circle(dot[0], dot[1], dot[2], dot[3])
     d_pig["last_vel"] = []
     for guy in d_pig["shape"]:
         d_pig["last_vel"].append(guy.body.kinetic_energy)
@@ -592,4 +588,5 @@ while running:
 
     space.step(dt) #We advance the simulation by dt so it stays logical even in case of higher/lower fps
     clock.tick(60)
+    frame_counter +=1
 pygame.quit()
