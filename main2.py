@@ -32,7 +32,6 @@ friction_factor = 2/3
 l_rec = []
 #2/3; 7/12; 3/4; 1/2
 dt = 0
-frame_counter = 0
 bird_pos = pygame.Vector2(144, 547)
 origin_bird_pos = (144,547)
 white = (255, 255, 255)
@@ -45,7 +44,7 @@ egg = None
 capacity = False
 mouse_B4 = False
 weight = 10
-file_name = "map.txt"
+frame_counter = 0
 l_timer_destruction = []
 l_timer_death = []
 d_prop_info = {
@@ -60,6 +59,7 @@ d_pig = {
     "last_vel": []
 
 }
+file_name = "map.txt"
 
 #d_prop_info["shape"] = prop shape (pymunk stuff)
 #d_prop_info["last_vel"] = velocity of last frame (used to calculate the difference in velocity to calculate if a structures breaks or not)
@@ -191,37 +191,12 @@ def draw(screen, space, draw_options, bird, bird_pos, w,h, ball, ball2 , ball3, 
         pygame.draw.line(screen, "black", (50,0), (50, 50), 4)
         for i in range(1, 9):
             pygame.draw.line(screen, "black", (100*i,0), (100*i, 50), 4)
-    
-def create_structure(space, width, height):
+
+def create_structure(space, rects):
     """
     Create all the diffenrents structure of the game
     """
     l_prop = []
-    #________Color setup________
-    brown = (139, 69, 19, 100)
-    gray = (128,128,128,100)
-
-    #List of all props of the game
-    #use: [(x, y), (width, height), color, mass]
-    #The x and y are the center's coordinates
-    rects = [
-    [(900, height - 150), (40, 200), gray, 300],
-    [(1200, height - 150), (40, 200), gray, 300],
-    [(1050, height - 270), (340, 40), gray, 400],
-
-    [(900, height - 410), (40, 200), brown, 150],
-    [(1200, height - 410), (40, 200), brown, 150],
-    [(1050, height - 540), (340, 40), brown, 220],
-
-
-    [(500, height - 120), (40, 130), gray, 30],
-    [(800, height - 120), (40, 130), gray, 30],
-    [(650, height - 200), (340, 40), gray, 50],
-
-    [(500, height - 270), (40, 70), brown, 5],
-    [(800, height - 270), (40, 70), brown, 5],
-    [(650, height - 330), (340, 40), brown, 10]
-    ]
     # For each props, gets it position, size, color and mass
     for pos, size, color, mass in rects:
         body = pymunk.Body() #Create a new body (by default is a dynamic body)
@@ -294,7 +269,7 @@ def launch(v, weight, radius):
                                                                                     #to how far the bird was dragged and to the bird's weight
     return ball
 
-def rectRect(r1x, r1y, r1w, r1h, r2x, r2y, r2w, r2h): #Say if 2 rectangle are touching each other
+def rectRect(r1x, r1y, r1w, r1h, r2x, r2y, r2w, r2h): #Say if 2 rectangles are touching each other
     """
     Input:
         r1x, r1y, = coordinates of the 1st rectangle
@@ -376,8 +351,23 @@ def explode_prop(space, d_prop_info, explosion_center, explosion_timer, score):
                 d_prop_info["shape"].append(prop)
         #_________________________________________
     return (d_prop_info, score)
+
+def rects_files(file_name, line_number):
+    l_rec = []
+    with open(file_name, "r") as f:
+        file = f.readlines()
+        for val in file[line_number].split(";"):
+            l_rec.append(val)
+    return l_rec
+save = rects_files(file_name, 0)
+color = [(128,128,128,100), (139, 69, 19, 100)]
+rects = []
+for i in range(int(len(save)/6)):
+    rects.append([(int(save[0+i*6]), int(save[1+i*6])-880), (int(save[2+i*6]), int(save[3+i*6])), color[int(save[4+i*6])], int(save[5+i*6])])
+
+
 #Place the props
-d_prop_info["shape"] = create_structure(space, 1600, 720)
+d_prop_info["shape"] = create_structure(space, rects)
 for prop in d_prop_info["shape"]:
     d_prop_info["last_vel"].append(prop.body.kinetic_energy)
 #Create the limit of the map
@@ -386,16 +376,13 @@ map_limit(space)
 #Create a pig
 d_pig["shape"].append(add_object(space, 1050, 100, 30, 10))
 
-
 while running:
-
-    keys = pygame.key.get_pressed()
+    keys = pygame.key.get_pressed() 
     # pygame.QUIT event means the user clicked X to bod.close your window
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
     apply_gravity(d_prop_info, ball, ball2, ball3, egg ,dt)
-
     l_to_remove = []
     for guy, last_vel in zip(d_pig["shape"], d_pig["last_vel"]):
         if abs(guy.body.kinetic_energy-last_vel) > 100000*guy.body.mass:
@@ -409,6 +396,7 @@ while running:
             if piggy not in l_to_remove:
                 d_pig["shape"].append(piggy)
     #Affiche 
+    
     draw(screen, space, draw_options, bird, bird_pos, w,h, ball, ball2 , ball3, font, score)
     #print((1-explosion_timer))
     #pygame.draw.rect(screen, "black", pygame.Rect(bird_pos.x, bird_pos.y, round((1-explosion_timer)*3200), round((1-explosion_timer)*3200)))
@@ -424,6 +412,7 @@ while running:
         for prop in l_prop_memo:
             if prop not in l_to_remove:
                 d_prop_info["shape"].append(prop)
+            
     event = mouse_event(mouse_B4) #get mouse event (check if mouse just got pressed/unpressed)
 
     if event == 1: #If mouse just got pressed
@@ -434,12 +423,11 @@ while running:
             if pygame.mouse.get_pos()[0] < 50:
                 ball, bird_pos, launching, ball2, ball3, egg = remove_ball(space, ball, ball2, ball3, egg, origin_bird_pos, bird_pos, launching)
                 capacity = False
-                
+                l_white_dot = []
             elif 50<pygame.mouse.get_pos()[0] and pygame.mouse.get_pos()[0] < 100:
                 for props in d_prop_info["shape"]:
                     space.remove(props, props.body)
-                d_prop_info["shape"] = create_structure(space, 1600, 720)
-
+                d_prop_info["shape"] = create_structure(space, rects)
             elif 100<pygame.mouse.get_pos()[0] and pygame.mouse.get_pos()[0] < 200 and not launching:
                 bird = red
                 birds_status = 1
@@ -505,13 +493,13 @@ while running:
                 velocity_egg = [velocity[0], velocity[1]]
                 egg = launch(velocity_egg, weight, radius)
                 egg.body.apply_impulse_at_local_point((velocity[0], 88000),(0,0))#Add an impulse relative 
-                ball.body.apply_impulse_at_local_point((velocity[0], -50000),(0,0))
+                ball.body.apply_impulse_at_local_point((velocity[0], -50000000),(0,0))
     elif event == -1: #If mouse just got unpressed
         if dragging: #If the user was dragging the bird from the cata
             #We launch it
             dragging = False
             launching = True
-            l_white_dot = []
+            
             #The velocity applied is the distance dragged from origin point were the mouse was clicked
             velocity = [(pygame.mouse.get_pos()[0]-origin_coo[0]), (pygame.mouse.get_pos()[1]-origin_coo[1])]
 
@@ -544,6 +532,8 @@ while running:
     if keys[pygame.K_r]:#If we press R key we reset bird's position
         ball, bird_pos, launching, ball2, ball3, egg = remove_ball(space, ball, ball2, ball3, egg, origin_bird_pos, bird_pos, launching)
         capacity = False
+        l_white_dot = []
+
     if dragging: #While we're dragging the bird:
 
         #We adjust the bird's postion for it stay under the mouse but not to teleport if the bird's wasn't clicked in it's center
@@ -565,10 +555,11 @@ while running:
     
     for dot in l_white_dot:
         pygame.draw.circle(dot[0], dot[1], dot[2], dot[3])
+    
     d_pig["last_vel"] = []
     for guy in d_pig["shape"]:
         d_pig["last_vel"].append(guy.body.kinetic_energy)
-
+    
     d_prop_info["last_vel"] = []
     for prop in d_prop_info["shape"]:
         d_prop_info["last_vel"].append(prop.body.kinetic_energy)
